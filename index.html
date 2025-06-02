@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Heart Disease Prediction</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div class="container">
+    <h1> CardioGuide </h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".jpg,.jpeg,.png" required>
+      <button type="submit">Predict</button>
+    </form>
+
+    <h2>Predictions:</h2>
+    <div id="result"></div>
+    <div id="warningMessage" class="message warning">
+      ⚠️ <strong>Warning:</strong> Detected an <strong>Abnormal</strong> heart signal.<br>
+      👉 Please consult a medical professional.
+    </div>
+    <div id="safeMessage" class="message safe">
+      ✅ All models predict <strong>Normal</strong> heart signals.
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      const resultDiv = document.getElementById('result');
+      const warningMsg = document.getElementById('warningMessage');
+      const safeMsg = document.getElementById('safeMessage');
+
+      // Reset messages
+      warningMsg.style.display = 'none';
+      safeMsg.style.display = 'none';
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const predictions = [data.cnn, data.xgboost, data.gnn];
+        resultDiv.innerHTML = `
+          <p><strong>CNN:</strong> ${data.cnn}</p>
+          <p><strong>XGBoost:</strong> ${data.xgboost}</p>
+          <p><strong>GNN:</strong> ${data.gnn}</p>
+        `;
+
+        if (predictions.includes("Abnormal")) {
+          warningMsg.style.display = "block";
+        } else {
+          safeMsg.style.display = "block";
+        }
+      } else {
+        resultDiv.innerHTML = `<p style="color:red;">${data.error}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
